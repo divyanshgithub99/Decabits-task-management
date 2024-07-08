@@ -6,6 +6,8 @@ import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CancelIcon from '@mui/icons-material/Cancel';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import taskService from '../services/taskService';
 import authService from '../services/authService';
 
@@ -30,6 +32,7 @@ const TaskList = () => {
       setTasks(response.data);
     } catch (err) {
       console.error(err);
+      toast.error('Failed to load tasks. Please try again.');
     }
   };
 
@@ -45,8 +48,10 @@ const TaskList = () => {
         setNewTask('');
         setNewDescription('');
         loadTasks();
+        toast.success('Task added successfully.');
       } catch (err) {
         console.error(err);
+        toast.error('Failed to add task. Please try again.');
       }
     }
   };
@@ -61,8 +66,10 @@ const TaskList = () => {
       setEditTaskId(null); // Reset editing state
       setOpen(false); // Close modal
       loadTasks();
+      toast.success('Task updated successfully.');
     } catch (err) {
       console.error(err);
+      toast.error('Failed to update task. Please try again.');
     }
   };
 
@@ -71,8 +78,10 @@ const TaskList = () => {
     try {
       await taskService.updateTask(taskId, { ...task, completed: !task.completed });
       loadTasks();
+      toast.success(`Task status toggled successfully.`);
     } catch (err) {
       console.error(err);
+      toast.error('Failed to toggle task status. Please try again.');
     }
   };
 
@@ -80,14 +89,16 @@ const TaskList = () => {
     try {
       await taskService.deleteTask(taskId);
       loadTasks();
+      toast.success('Task deleted successfully.');
     } catch (err) {
       console.error(err);
+      toast.error('Failed to delete task. Please try again.');
     }
   };
 
   const handleLogout = () => {
     authService.logout();
-    window.location.href = '/login'; 
+    window.location.href = '/login'; // Redirect to login page
   };
 
   const filteredTasks = tasks.filter(task => {
@@ -101,8 +112,8 @@ const TaskList = () => {
 
   return (
     <Grid container justifyContent="center" alignItems="center" style={{ minHeight: '100vh' }}>
-      <Grid item xs={12}>
-        <Box display="flex" justifyContent="flex-end" p={2}>
+      <Grid item xs={12} style={{ position: 'fixed', top: 0, right: 0, padding: '10px' }}>
+        <Box display="flex" justifyContent="flex-end">
           <Button
             variant="contained"
             color="secondary"
@@ -113,7 +124,7 @@ const TaskList = () => {
           </Button>
         </Box>
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid item xs={12} sm={6} style={{ marginTop: '60px' }}>
         <Paper elevation={3} className="task-list">
           <Box p={3}>
             <Typography variant="h4" component="h1" align="center" gutterBottom style={{ marginBottom: '1.5rem', color: '#3f51b5' }}>
@@ -147,56 +158,34 @@ const TaskList = () => {
             <List>
               {filteredTasks.map(task => (
                 <ListItem key={task._id} className={task.completed ? 'completed' : 'pending'}>
-                  {editTaskId === task._id ? (
-                    <div>
-                      <TextField
-                        fullWidth
-                        margin="normal"
-                        type="text"
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
+                  <Grid container alignItems="center">
+                    <Grid item xs={8}>
+                      <ListItemText
+                        primary={<Typography variant="body1" style={{ cursor: 'pointer'}}>{task.text}</Typography>}
+                        secondary={<Typography variant="body2">{task.description}</Typography>}
+                        onClick={() => handleToggleStatus(task._id)}
                       />
-                      <TextField
-                        fullWidth
-                        margin="normal"
-                        multiline
-                        rows={3}
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
-                      />
-                      <Button variant="contained" color="primary" onClick={() => handleUpdateTask(task._id)}>Save</Button>
-                      <Button variant="contained" onClick={() => setEditTaskId(null)}>Cancel</Button>
-                    </div>
-                  ) : (
-                    <Grid container alignItems="center">
-                      <Grid item xs={8}>
-                        <ListItemText
-                          primary={<Typography variant="body1" style={{ cursor: 'pointer', textDecoration: task.completed ? 'line-through' : 'none' }}>{task.text}</Typography>}
-                          secondary={<Typography variant="body2">{task.description}</Typography>}
-                          onClick={() => handleToggleStatus(task._id)}
-                        />
-                      </Grid>
-                      <Grid item xs={4}>
-                        <ListItemSecondaryAction>
-                          {task.completed ? (
-                            <IconButton edge="end" onClick={() => handleToggleStatus(task._id)} aria-label="Mark as Pending">
-                              <TaskAltIcon color="secondary" />
-                            </IconButton>
-                          ) : (
-                            <IconButton edge="end" onClick={() => handleToggleStatus(task._id)} aria-label="Mark as Completed">
-                              <PendingActionsIcon color="primary" />
-                            </IconButton>
-                          )}
-                          <IconButton edge="end" onClick={() => { setEditTaskId(task._id); setEditText(task.text); setEditDescription(task.description); handleOpen(); }} aria-label="Edit">
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton edge="end" onClick={() => handleDeleteTask(task._id)} aria-label="Delete">
-                            <DeleteIcon />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </Grid>
                     </Grid>
-                  )}
+                    <Grid item xs={4}>
+                      <ListItemSecondaryAction>
+                        {task.completed ? (
+                          <IconButton edge="end" onClick={() => handleToggleStatus(task._id)} aria-label="Mark as Pending">
+                            <TaskAltIcon color="secondary" />
+                          </IconButton>
+                        ) : (
+                          <IconButton edge="end" onClick={() => handleToggleStatus(task._id)} aria-label="Mark as Completed">
+                            <PendingActionsIcon color="primary" />
+                          </IconButton>
+                        )}
+                        <IconButton edge="end" onClick={() => { setEditTaskId(task._id); setEditText(task.text); setEditDescription(task.description); setOpen(true); }} aria-label="Edit">
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton edge="end" onClick={() => handleDeleteTask(task._id)} aria-label="Delete">
+                          <DeleteIcon />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </Grid>
+                  </Grid>
                 </ListItem>
               ))}
             </List>
@@ -220,7 +209,7 @@ const TaskList = () => {
             position="absolute"
             top="50%"
             left="50%"
-            transform="translate(-50%, -50%)"
+            style={{ transform: 'translate(-50%, -50%)' }}
             width={400}
             bgcolor="background.paper"
             border="2px solid #000"
@@ -237,7 +226,7 @@ const TaskList = () => {
               type="text"
               value={editText}
               onChange={(e) => setEditText(e.target.value)}
-              placeholder="Edit task text"
+              placeholder="Task"
             />
             <TextField
               fullWidth
@@ -246,10 +235,10 @@ const TaskList = () => {
               rows={3}
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Edit task description"
+              placeholder="Description"
             />
-            <Button variant="contained" color="primary" onClick={() => handleUpdateTask(editTaskId)}>Save</Button>
-            <Button variant="contained" color="secondary" onClick={handleClose} startIcon={<CancelIcon />}>Cancel</Button>
+            <Button variant="contained" color="primary" onClick={() => handleUpdateTask(editTaskId)} style={{marginRight:'1rem'}}>Update Task</Button>
+            <Button variant="contained" color="primary" onClick={handleClose} style={{marginRight:'1rem'}}>Cancel</Button>
           </Box>
         </Fade>
       </Modal>

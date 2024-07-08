@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import authService from '../services/authService';
 import { Container, TextField, Button, Typography, Box } from '@mui/material';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Signup = () => {
   const [username, setUsername] = useState('');
@@ -14,9 +16,11 @@ const Signup = () => {
       await authService.signup(username, password);
       // After signup, automatically log in the user
       await authService.login(username, password);
+      toast.success("User Created!")
       navigate('/tasks');
     } catch (err) {
       console.error(err);
+      toast.error(err.response.data.message)
     }
   };
 

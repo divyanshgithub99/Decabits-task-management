@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import authService from '../services/authService';
 import { Container, TextField, Button, Typography, Box } from '@mui/material';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await authService.login(username, password);
-      navigate('/tasks');
+      toast.success("Your Welcome!")
+      window.location.href = '/tasks';
     } catch (err) {
       console.error(err);
+      toast.error(err.response.data.message)
     }
   };
 
